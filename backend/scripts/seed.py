@@ -21,19 +21,19 @@ from app.models import Client, Trailer, TrailerStatus, User, UserRole
 DEV_PASSWORD = "Trocar123!"  # noqa: S105
 
 USERS: list[dict[str, str | UserRole]] = [
-    {"name": "Admin Dev", "email": "admin@dev.assiscarretas.local", "role": UserRole.ADMIN},
-    {"name": "Gestor Dev", "email": "gestor@dev.assiscarretas.local", "role": UserRole.GESTOR},
+    {"name": "Admin Dev", "email": "admin@dev.assiscarretas.com", "role": UserRole.ADMIN},
+    {"name": "Gestor Dev", "email": "gestor@dev.assiscarretas.com", "role": UserRole.GESTOR},
     {
         "name": "Atendente Dev",
-        "email": "atendente@dev.assiscarretas.local",
+        "email": "atendente@dev.assiscarretas.com",
         "role": UserRole.ATENDENTE,
     },
     {
         "name": "Vistoriador Dev",
-        "email": "vistoriador@dev.assiscarretas.local",
+        "email": "vistoriador@dev.assiscarretas.com",
         "role": UserRole.VISTORIADOR,
     },
-    {"name": "Viewer Dev", "email": "viewer@dev.assiscarretas.local", "role": UserRole.VIEWER},
+    {"name": "Viewer Dev", "email": "viewer@dev.assiscarretas.com", "role": UserRole.VIEWER},
 ]
 
 

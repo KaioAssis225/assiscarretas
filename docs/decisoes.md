@@ -32,3 +32,17 @@ Decisões de negócio pendentes ficam em aberto no Bloco 0 do
 | 2.8 | `DATABASE_URL` sem prefixo `ASSISCARRETAS_` | Convenção universal de PaaS/plataformas gerenciadas. |
 | 2.9 | argon2-cffi adicionado já no Bloco 2 | O seed precisa criar usuários com hash real; será reutilizado pela autenticação no Bloco 3. |
 | 2.10 | Testes de integração usam banco `assiscarretas_test` recriado do zero por migration a cada sessão; `pytest.skip` se Postgres indisponível | Testa o caminho real (migrations + constraints Postgres); suíte unitária continua rodando sem Docker. |
+
+## Bloco 3 — Autenticação, usuários e RBAC (2026-07-17)
+
+| # | Decisão | Justificativa |
+|---|---|---|
+| 3.1 | PyJWT (HS256) para access token; refresh token aleatório (`secrets.token_urlsafe`) com SHA-256 no banco | PyJWT é leve e suficiente; refresh não precisa ser JWT — hash simples permite revogação e nunca persiste o token em claro. |
+| 3.2 | Reuso de refresh token já revogado derruba TODAS as sessões do usuário | Sinal clássico de roubo de cookie; a rotação garante que o portador legítimo sempre tem o token mais novo. |
+| 3.3 | Cookie de refresh com `Path=/api/v1/auth`, HttpOnly, SameSite=Lax; `Secure` fora de `local` | O cookie só trafega nas rotas de auth; Lax funciona porque frontend e API compartilham o site (localhost/localhost, e em produção subdomínios do mesmo domínio). |
+| 3.4 | Rate limit de login em memória por processo (`ponytail:` teto documentado) | Suficiente para uma instância; trocar por Redis quando houver múltiplos workers. Instância vive em `app.state` — isolada por app em testes. |
+| 3.5 | `must_change_password` bloqueia rotas de negócio via dependência (`403 troca_de_senha_obrigatoria`); troca de senha revoga todas as sessões | Implementa a troca obrigatória do doc 05 sem espalhar `if` pelos routers. |
+| 3.6 | E-mails de seed/teste em domínios reais fictícios (`.com`), nunca `.local` | Descoberto em teste: `email-validator` rejeita domínios reservados (`.local`) — o login dos usuários seedados retornaria 422. |
+| 3.7 | Mensagem única para e-mail inexistente e senha errada; auditoria de `login_failed`/`login_success`/`refresh_reuse_detected` | Anti-enumeração de usuários (doc 05) + trilha exigida pela seção de auditoria. |
+| 3.8 | Access token apenas em memória no frontend; restauração de sessão via `POST /auth/refresh` no boot | Nada de token em localStorage; o cookie HttpOnly é a única persistência. |
+| 3.9 | IDOR em `/users/{id}`: papéis sem permissão recebem 403 tanto para recurso existente quanto inexistente | Não vaza a existência de recursos de terceiros (doc 05 §5.3). |

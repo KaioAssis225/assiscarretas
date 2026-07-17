@@ -2,10 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api.v1.routers import health
+from app.api.v1.routers import auth, health, users
 from app.core.config import get_settings
 from app.core.errors import install_error_handling
 from app.core.logging import configure_logging
+from app.core.rate_limit import SlidingWindowLimiter
 
 
 def create_app() -> FastAPI:
@@ -29,7 +30,14 @@ def create_app() -> FastAPI:
 
     install_error_handling(app)
 
+    # Estado por aplicação (isolado em testes): limitador de login
+    app.state.login_limiter = SlidingWindowLimiter(
+        settings.login_rate_limit_attempts, settings.login_rate_limit_window_seconds
+    )
+
     app.include_router(health.router, prefix=settings.api_v1_prefix)
+    app.include_router(auth.router, prefix=settings.api_v1_prefix)
+    app.include_router(users.router, prefix=settings.api_v1_prefix)
 
     return app
 

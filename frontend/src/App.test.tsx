@@ -1,7 +1,42 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { AuthProvider } from '@/auth/AuthContext'
+import { setAccessToken } from '@/api/client'
 import App from './App'
+
+const sessionUser = {
+  id: 'u-1',
+  name: 'Admin Teste',
+  email: 'admin@teste.local',
+  role: 'ADMIN',
+  is_active: true,
+  must_change_password: false,
+  last_login_at: null,
+}
+
+function mockRefresh(ok: boolean, user = sessionUser) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      ok
+        ? new Response(
+            JSON.stringify({
+              access_token: 'token-teste',
+              token_type: 'bearer',
+              expires_in: 900,
+              user,
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          )
+        : new Response(JSON.stringify({ error: { code: 'sessao_invalida' } }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+    ),
+  )
+}
 
 function renderApp(initialPath = '/') {
   const queryClient = new QueryClient({
@@ -9,25 +44,54 @@ function renderApp(initialPath = '/') {
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     </QueryClientProvider>,
   )
 }
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+  setAccessToken(null)
+})
+
 describe('App', () => {
-  it('exibe o layout com navegação e o dashboard na rota raiz', () => {
+  it('sem sessão, redireciona para o login', async () => {
+    mockRefresh(false)
     renderApp('/')
 
-    expect(screen.getByText('AssisCarretas')).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Navegação principal' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeInTheDocument()
+    expect(screen.getByLabelText('E-mail')).toBeInTheDocument()
+    expect(screen.getByLabelText('Senha')).toBeInTheDocument()
   })
 
-  it('exibe página de não encontrado para rota inexistente', () => {
+  it('com sessão restaurada, exibe o dashboard e o usuário logado', async () => {
+    mockRefresh(true)
+    renderApp('/')
+
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(screen.getByText('Admin Teste')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
+  })
+
+  it('com troca de senha pendente, força a tela de troca', async () => {
+    mockRefresh(true, { ...sessionUser, must_change_password: true })
+    renderApp('/')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Trocar senha' }),
+    ).toBeInTheDocument()
+  })
+
+  it('rota inexistente autenticada mostra página não encontrada', async () => {
+    mockRefresh(true)
     renderApp('/rota-que-nao-existe')
 
-    expect(screen.getByRole('heading', { name: 'Página não encontrada' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Página não encontrada' }),
+    ).toBeInTheDocument()
   })
 })
