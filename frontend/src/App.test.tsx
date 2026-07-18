@@ -68,22 +68,24 @@ describe('App', () => {
     expect(screen.getByLabelText('Senha')).toBeInTheDocument()
   })
 
-  it('com sessão restaurada, exibe o dashboard e o usuário logado', async () => {
+  it('com sessão restaurada, exibe o painel e o usuário logado', async () => {
     mockRefresh(true)
     renderApp('/')
 
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Painel' })).toBeInTheDocument()
     expect(screen.getByText('Admin Teste')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
   })
 
-  it('com troca de senha pendente, força a tela de troca', async () => {
+  it('com troca de senha pendente, força a tela de troca com a regra visível', async () => {
     mockRefresh(true, { ...sessionUser, must_change_password: true })
     renderApp('/')
 
     expect(
       await screen.findByRole('heading', { name: 'Trocar senha' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('Mínimo de 10 caracteres.')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Mostrar senha' })).toHaveLength(3)
   })
 
   it('rota inexistente autenticada mostra página não encontrada', async () => {

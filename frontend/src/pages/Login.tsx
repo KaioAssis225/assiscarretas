@@ -5,6 +5,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { ApiError } from '@/api/client'
 import { useAuth } from '@/auth/AuthContext'
+import {
+  FieldError,
+  inputClass,
+  PasswordInput,
+  primaryButtonClass,
+} from '@/components/ui/form'
+import { usePageTitle } from '@/lib/usePageTitle'
 
 const loginSchema = z.object({
   email: z.string().email('Informe um e-mail válido'),
@@ -13,11 +20,19 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
+interface LoginLocationState {
+  from?: string
+  notice?: string
+}
+
 export default function Login() {
+  usePageTitle('Entrar')
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [serverError, setServerError] = useState<string | null>(null)
+
+  const state = (location.state as LoginLocationState | null) ?? {}
 
   const {
     register,
@@ -33,8 +48,7 @@ export default function Login() {
         navigate('/trocar-senha', { replace: true })
         return
       }
-      const from = (location.state as { from?: string } | null)?.from ?? '/'
-      navigate(from, { replace: true })
+      navigate(state.from ?? '/', { replace: true })
     } catch (error) {
       setServerError(
         error instanceof ApiError ? error.message : 'Falha ao conectar com o servidor.',
@@ -48,6 +62,15 @@ export default function Login() {
         <h1 className="text-xl font-bold text-primary">AssisCarretas</h1>
         <p className="mt-1 text-sm text-slate-600">Entre com a sua conta</p>
 
+        {state.notice && (
+          <p
+            role="status"
+            className="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          >
+            {state.notice}
+          </p>
+        )}
+
         <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
@@ -57,47 +80,39 @@ export default function Login() {
               id="email"
               type="email"
               autoComplete="username"
-              className="mt-1 block min-h-11 w-full rounded-md border border-slate-300 px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              autoFocus
+              className={inputClass}
               aria-invalid={errors.email ? 'true' : undefined}
+              aria-describedby={errors.email ? 'email-error' : undefined}
               {...register('email')}
             />
-            {errors.email && (
-              <p role="alert" className="mt-1 text-sm text-red-600">
-                {errors.email.message}
-              </p>
-            )}
+            <FieldError id="email-error" message={errors.email?.message} />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium">
               Senha
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
-              className="mt-1 block min-h-11 w-full rounded-md border border-slate-300 px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               aria-invalid={errors.password ? 'true' : undefined}
+              aria-describedby={errors.password ? 'password-error' : undefined}
               {...register('password')}
             />
-            {errors.password && (
-              <p role="alert" className="mt-1 text-sm text-red-600">
-                {errors.password.message}
-              </p>
-            )}
+            <FieldError id="password-error" message={errors.password?.message} />
           </div>
 
           {serverError && (
-            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {serverError}
-            </p>
+            <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p>{serverError}</p>
+              <p className="mt-1 text-red-900/70">
+                Esqueceu a senha? Peça ao gestor para redefinir o seu acesso.
+              </p>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="min-h-11 w-full rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60"
-          >
+          <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
             {isSubmitting ? 'Entrando…' : 'Entrar'}
           </button>
         </form>

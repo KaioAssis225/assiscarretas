@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { ApiError } from '@/api/client'
 import { useAuth } from '@/auth/AuthContext'
+import { FieldError, PasswordInput, primaryButtonClass } from '@/components/ui/form'
+import { usePageTitle } from '@/lib/usePageTitle'
 
 const schema = z
   .object({
@@ -20,6 +22,7 @@ const schema = z
 type ChangePasswordForm = z.infer<typeof schema>
 
 export default function ChangePassword() {
+  usePageTitle('Trocar senha')
   const { changePassword } = useAuth()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -34,16 +37,16 @@ export default function ChangePassword() {
     setServerError(null)
     try {
       await changePassword(data.currentPassword, data.newPassword)
-      navigate('/login', { replace: true })
+      navigate('/login', {
+        replace: true,
+        state: { notice: 'Senha alterada com sucesso. Entre com a nova senha.' },
+      })
     } catch (error) {
       setServerError(
         error instanceof ApiError ? error.message : 'Falha ao conectar com o servidor.',
       )
     }
   }
-
-  const inputClass =
-    'mt-1 block min-h-11 w-full rounded-md border border-slate-300 px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
@@ -59,57 +62,47 @@ export default function ChangePassword() {
             <label htmlFor="currentPassword" className="block text-sm font-medium">
               Senha atual
             </label>
-            <input
+            <PasswordInput
               id="currentPassword"
-              type="password"
               autoComplete="current-password"
-              className={inputClass}
               aria-invalid={errors.currentPassword ? 'true' : undefined}
+              aria-describedby={errors.currentPassword ? 'currentPassword-error' : undefined}
               {...register('currentPassword')}
             />
-            {errors.currentPassword && (
-              <p role="alert" className="mt-1 text-sm text-red-600">
-                {errors.currentPassword.message}
-              </p>
-            )}
+            <FieldError id="currentPassword-error" message={errors.currentPassword?.message} />
           </div>
 
           <div>
             <label htmlFor="newPassword" className="block text-sm font-medium">
               Nova senha
             </label>
-            <input
+            <PasswordInput
               id="newPassword"
-              type="password"
               autoComplete="new-password"
-              className={inputClass}
               aria-invalid={errors.newPassword ? 'true' : undefined}
+              aria-describedby={
+                errors.newPassword ? 'newPassword-hint newPassword-error' : 'newPassword-hint'
+              }
               {...register('newPassword')}
             />
-            {errors.newPassword && (
-              <p role="alert" className="mt-1 text-sm text-red-600">
-                {errors.newPassword.message}
-              </p>
-            )}
+            <p id="newPassword-hint" className="mt-1 text-xs text-slate-600">
+              Mínimo de 10 caracteres.
+            </p>
+            <FieldError id="newPassword-error" message={errors.newPassword?.message} />
           </div>
 
           <div>
             <label htmlFor="confirm" className="block text-sm font-medium">
               Confirmar nova senha
             </label>
-            <input
+            <PasswordInput
               id="confirm"
-              type="password"
               autoComplete="new-password"
-              className={inputClass}
               aria-invalid={errors.confirm ? 'true' : undefined}
+              aria-describedby={errors.confirm ? 'confirm-error' : undefined}
               {...register('confirm')}
             />
-            {errors.confirm && (
-              <p role="alert" className="mt-1 text-sm text-red-600">
-                {errors.confirm.message}
-              </p>
-            )}
+            <FieldError id="confirm-error" message={errors.confirm?.message} />
           </div>
 
           {serverError && (
@@ -118,11 +111,7 @@ export default function ChangePassword() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="min-h-11 w-full rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60"
-          >
+          <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
             {isSubmitting ? 'Salvando…' : 'Salvar nova senha'}
           </button>
         </form>
