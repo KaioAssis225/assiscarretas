@@ -2,14 +2,15 @@ import { forwardRef, useState, type InputHTMLAttributes } from 'react'
 
 /** Vocabulário único de formulário — usado por todas as telas. */
 
+// text-base no mobile: fontes <16px em inputs disparam auto-zoom no iOS
 export const inputClass =
-  'mt-1 block min-h-11 w-full rounded-md border border-slate-300 px-3 text-sm ' +
+  'mt-1 block min-h-11 w-full rounded-md border border-slate-300 px-3 text-base sm:text-sm ' +
   'focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary ' +
   'aria-[invalid=true]:border-red-600'
 
 export const primaryButtonClass =
   'min-h-11 w-full rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground ' +
-  'transition-colors hover:bg-primary/90 disabled:opacity-60 ' +
+  'transition-colors hover:bg-primary/90 active:bg-primary/80 disabled:opacity-60 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
 
 export const focusRingClass =

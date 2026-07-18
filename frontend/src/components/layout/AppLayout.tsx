@@ -21,16 +21,22 @@ export function AppLayout() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6">
           <span className="text-lg font-bold text-primary">AssisCarretas</span>
-          <nav aria-label="Navegação principal" className="flex gap-1">
+          {/* No mobile a nav é uma barra fixa inferior (zona do polegar);
+              no desktop (md+) volta a ser a fileira do topo. z-20 = camada
+              de navegação fixa (única camada elevada do app até aqui). */}
+          <nav
+            aria-label="Navegação principal"
+            className="fixed inset-x-0 bottom-0 z-20 flex border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:static md:inset-auto md:z-auto md:gap-1 md:border-0 md:bg-transparent md:pb-0"
+          >
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors ${focusRingClass} ${
+                  `flex min-h-12 flex-1 items-center justify-center text-sm font-medium transition-colors md:min-h-11 md:flex-none md:justify-start md:rounded-md md:px-3 ${focusRingClass} ${
                     isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'text-primary md:bg-primary/10'
+                      : 'text-slate-600 hover:text-slate-900 active:bg-slate-100 md:hover:bg-slate-100'
                   }`
                 }
               >
@@ -47,14 +53,15 @@ export function AppLayout() {
             <button
               type="button"
               onClick={handleLogout}
-              className={`flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 ${focusRingClass}`}
+              className={`flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 ${focusRingClass}`}
             >
               Sair
             </button>
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      {/* pb extra no mobile para o conteúdo não ficar atrás da barra inferior */}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-24 md:pb-6">
         <Outlet />
       </main>
     </div>
