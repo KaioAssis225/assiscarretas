@@ -8,7 +8,10 @@
  *   ({ error: { code, message, correlation_id, details } }).
  */
 
-const BASE_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+// Em produção a API é servida pelo mesmo domínio via proxy (vercel.json);
+// em desenvolvimento aponta para o uvicorn local. VITE_API_URL sobrepõe ambos.
+const BASE_URL: string =
+  import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:8000')
 const API_PREFIX = '/api/v1'
 
 let accessToken: string | null = null

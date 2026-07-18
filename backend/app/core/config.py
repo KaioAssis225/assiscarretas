@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -45,6 +45,17 @@ class Settings(BaseSettings):
     # Tentativas de login por IP+e-mail dentro da janela antes do 429
     login_rate_limit_attempts: int = 5
     login_rate_limit_window_seconds: int = 60
+
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _normalizar_scheme_do_banco(cls, value: str) -> str:
+        """Railway/Heroku entregam postgres:// ou postgresql://;
+        SQLAlchemy com psycopg3 exige postgresql+psycopg://."""
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+psycopg://", 1)
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+        return value
 
     @model_validator(mode="after")
     def _exigir_segredo_real_em_producao(self) -> "Settings":
